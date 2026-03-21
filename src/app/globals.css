@@ -1,76 +1,96 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg-main: #101010;
-  --color-bg-secondary: #202020;
-  --color-bg-surface: #181818;
-  --color-bg-component: #252525;
-  --color-bg-diff: #1e1e1e;
-  --color-border: #353535;
-  --color-border-hover: #454545;
-  --color-hover: #1f1f1f;
-  --color-text-primary: #f2f2f2;
-  --color-text-secondary: #8f8f8f;
-  --color-text-light: #cbcbcb;
-  --color-pacific: #6096ff;
-  --color-coral: #ff5e5e;
-  --color-ray: #ffaa47;
-  --color-jade: #35e6bc;
-  --color-turquoise: #02c598;
-  --color-petal: #df60ff;
-  --color-sky: #00bbff;
-  --color-shade: #2e2e2e;
-  --color-night: #242424;
-  --color-extra-night: #191919;
+  --color-bg-page:       #141414;
+  --color-bg-secondary:  #1a1a1a;
+  --color-bg-surface:    #1e1e1e;
+  --color-bg-hover:      #222222;
+  --color-border:        rgba(255,255,255,0.08);
+  --color-border-strong: rgba(255,255,255,0.14);
+  --color-text-primary:  rgba(255,255,255,0.9);
+  --color-text-secondary:#9ca3af;
+  --color-text-muted:    #6b7280;
+  --color-green:         #4ade80;
+  --color-red:           #f87171;
+  --color-green-btn:     #4ade80;
+
+  /* severity (for review results) */
+  --color-severe:        #ef4444;
+  --color-severe-bg:     rgba(239,68,68,0.07);
+  --color-severe-border: rgba(239,68,68,0.18);
+  --color-warning:       #f59e0b;
+  --color-warning-bg:    rgba(245,158,11,0.07);
+  --color-warning-border:rgba(245,158,11,0.18);
+  --color-info:          #6366f1;
+  --color-info-bg:       rgba(99,102,241,0.07);
+  --color-info-border:   rgba(99,102,241,0.18);
+  --color-success:       #22c55e;
+  --color-success-bg:    rgba(34,197,94,0.07);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  min-height: 100%;
 }
 
 html, body {
-  height: 100%;
-  overscroll-behavior-x: none;
-  background: #101010;
-  color: #f2f2f2;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #141414;
+  color: rgba(255,255,255,0.9);
+  font-family: "SF Pro", "SF Pro Display", ui-sans-serif, system-ui, -apple-system,
+               BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::selection { background: rgba(74,222,128,0.2); }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #353535; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #454545; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── Animations ── */
+@keyframes fadeIn  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeUp  { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin    { to { transform:rotate(360deg); } }
+@keyframes pulse   { 0%,100%{opacity:0.4;transform:scale(1);} 50%{opacity:1;transform:scale(1.04);} }
+
+/* Devin accordion — exact match */
+@keyframes accordion-down {
+  from { opacity: 0; height: 0; }
+  to   { opacity: 1; height: var(--accordion-content-height, 300px); }
 }
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes accordion-up {
+  from { opacity: 1; height: var(--accordion-content-height, 300px); }
+  to   { opacity: 0; height: 0; }
 }
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+
+/* Devin popover-in — used for right panel entrance */
+@keyframes popover-in {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+
+/* stripe-hatch overlay (used on "Devin" and "Review" words) */
+.stripe-hatch {
+  position: relative;
+  display: inline-block;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-@keyframes expandWidth {
-  from { width: 0%; }
-  to { width: 100%; }
-}
-@keyframes dotPulse {
-  0%, 80%, 100% { opacity: 0; transform: scale(0.6); }
-  40% { opacity: 1; transform: scale(1); }
+.stripe-hatch::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    -55deg,
+    color-mix(in srgb, currentcolor 20%, transparent) 0px,
+    color-mix(in srgb, currentcolor 20%, transparent) 1.5px,
+    transparent 1.5px,
+    transparent 5px
+  );
 }
