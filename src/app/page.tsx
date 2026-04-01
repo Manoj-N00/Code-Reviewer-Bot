@@ -103,7 +103,7 @@ function LandingPage({ onSubmit }: { onSubmit: (url: string) => void }) {
             Or connect this bot to your repository for automatic PR reviews.
           </span>
           <a
-            href="https://github.com/apps/code-reviewer-bot/installations/new"
+            href="https://github.com/apps/diff-detective"
             target="_blank"
             rel="noopener noreferrer"
             style={{

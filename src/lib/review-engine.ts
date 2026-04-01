@@ -150,7 +150,7 @@ function formatSummary(
 
   md += summaries.join("\n\n");
 
-  md += `\n\n*Reviewed by [Diff Detective Bot](https://github.com/apps/review-your-prs)*`;
+  md += `\n\n*Reviewed by [Diff Detective Bot](https://github.com/apps/diff-detective)*`;
 
   return md;
 }
