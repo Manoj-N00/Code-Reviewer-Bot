@@ -98,6 +98,38 @@ function LandingPage({ onSubmit }: { onSubmit: (url: string) => void }) {
         <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 10 }}>
           Try on any <strong style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>public</strong> GitHub PR URL
         </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>
+            Or connect this bot to your repository for automatic PR reviews.
+          </span>
+          <a
+            href="https://github.com/apps/code-reviewer-bot/installations/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: 12,
+              color: "rgba(255,255,255,0.85)",
+              textDecoration: "none",
+              border: "1px solid rgba(255,255,255,0.14)",
+              borderRadius: 7,
+              padding: "5px 10px",
+              background: "rgba(255,255,255,0.03)",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLAnchorElement;
+              el.style.borderColor = "rgba(255,255,255,0.28)";
+              el.style.background = "rgba(255,255,255,0.08)";
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLAnchorElement;
+              el.style.borderColor = "rgba(255,255,255,0.14)";
+              el.style.background = "rgba(255,255,255,0.03)";
+            }}
+          >
+            Connect repository
+          </a>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div style={{
