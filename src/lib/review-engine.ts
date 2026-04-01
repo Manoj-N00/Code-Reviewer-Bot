@@ -101,7 +101,7 @@ function validateAndFilterComments(
   for (const file of files) {
     for (const hunk of file.hunks) {
       for (const line of hunk.lines) {
-        if (line.type === "add" || line.type === "context") {
+        if (line.type === "delete" || line.type === "context") {
           validLines.add(`${file.path}:${line.newLineNumber}`);
         }
       }
