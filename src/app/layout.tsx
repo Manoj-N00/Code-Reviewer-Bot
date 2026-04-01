@@ -4,6 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Code Review — AI-Powered PR Review",
   description: "Code review that organizes diffs, detects moved code, and flags potential bugs.",
+  icons: {
+    icon: "/review-your-prs-logo.png",
+    shortcut: "/review-your-prs-logo.png",
+    apple: "/review-your-prs-logo.png",
+  },
 };
 
 export const viewport: Viewport = {
