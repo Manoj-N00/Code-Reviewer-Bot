@@ -139,11 +139,6 @@ function formatSummary(
   const criticalCount = comments.filter(
     (c) => c.severity === "critical"
   ).length;
-  const warningCount = comments.filter((c) => c.severity === "warning").length;
-  const suggestionCount = comments.filter(
-    (c) => c.severity === "suggestion"
-  ).length;
-  const nitpickCount = comments.filter((c) => c.severity === "nitpick").length;
 
   let md = `## Code Review Summary\n\n`;
   md += `**Files reviewed:** ${files.length} | `;
@@ -154,13 +149,6 @@ function formatSummary(
   }
 
   md += summaries.join("\n\n");
-
-  md += `\n\n---\n`;
-  md += `| Severity | Count |\n|----------|-------|\n`;
-  md += `| \u{1F534} Critical | ${criticalCount} |\n`;
-  md += `| \u{1F7E1} Warning | ${warningCount} |\n`;
-  md += `| \u{1F535} Suggestion | ${suggestionCount} |\n`;
-  md += `| \u26AA Nitpick | ${nitpickCount} |\n`;
 
   md += `\n\n*Reviewed by [Code Reviewer Bot](https://github.com/apps/code-reviewer-bot)*`;
 
