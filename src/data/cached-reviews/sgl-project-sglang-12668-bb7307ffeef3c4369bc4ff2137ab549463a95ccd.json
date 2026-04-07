@@ -1,0 +1,46 @@
+{
+  "pr": {
+    "title": "[router][grpc] Implement tool_choice support for Responses API",
+    "owner": "sgl-project",
+    "repo": "sglang",
+    "number": 12668
+  },
+  "stats": {
+    "filesReviewed": 14,
+    "additions": 457,
+    "deletions": 184
+  },
+  "summary": "The PR adds extensive tool_choice support but introduces several critical issues that could break compilation and cause incorrect tool handling.",
+  "comments": [
+    {
+      "file": "sgl-router/src/routers/grpc/regular/responses/tool_loop.rs",
+      "line": 70,
+      "comment": "prepare_chat_tools_and_choice merges MCP tools into the request on every iteration without resetting the tool list, causing duplicate entries and unbounded memory growth. Reset the tool list to the original function tools before extending with MCP tools, or store the original list separately.",
+      "severity": "critical"
+    },
+    {
+      "file": "sgl-router/src/routers/grpc/regular/responses/tool_loop.rs",
+      "line": 92,
+      "comment": "The same function sets tool_choice to Auto for iterations >0, but it also clones the existing tool_choice for iteration 0. If the original request had tool_choice = None, this correctly defaults to Auto, but the cloning may retain a previous iteration's Auto value when the loop restarts, potentially overriding a user‑specified choice. Ensure the original request's tool_choice is preserved for the first iteration only.",
+      "severity": "warning"
+    },
+    {
+      "file": "sgl-router/src/routers/grpc/regular/responses/tool_loop.rs",
+      "line": 191,
+      "comment": "The debug log now references `mcp_chat_tools`, but later the code still uses the old variable name `chat_tools` in comments and some branches, leading to mismatched variable usage and potential runtime errors. Update all references to the new variable name consistently.",
+      "severity": "warning"
+    },
+    {
+      "file": "sgl-router/src/routers/grpc/regular/responses/tool_loop.rs",
+      "line": 938,
+      "comment": "Removed the `use serde_json::Value;` import but still use `Value::Object` when converting MCP tools, causing a compile error. Re‑add the import or fully qualify the type.",
+      "severity": "critical"
+    },
+    {
+      "file": "sgl-router/src/grpc_client/sglang_scheduler.rs",
+      "line": 316,
+      "comment": "Changed the signature of `build_grpc_sampling_params_from_responses` to accept an extra `tool_call_constraint` argument, but other call sites in the codebase are not updated, which will lead to compilation failures. Ensure all callers pass the new argument (or overload the function).",
+      "severity": "critical"
+    }
+  ]
+}

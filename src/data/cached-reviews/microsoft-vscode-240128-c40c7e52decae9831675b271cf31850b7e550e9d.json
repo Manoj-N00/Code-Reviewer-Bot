@@ -1,0 +1,46 @@
+{
+  "pr": {
+    "title": "Add more fig specs",
+    "owner": "microsoft",
+    "repo": "vscode",
+    "number": 240128
+  },
+  "stats": {
+    "filesReviewed": 37,
+    "additions": 12355,
+    "deletions": 4
+  },
+  "summary": "The PR adds many new completion specs and a safety check for generated items, but introduces a potential runtime error in the SSH known-hosts generator.\n\nThe spec adds many new generators and options, but there are a few reliability and correctness issues: an invalid `find` flag, duplicate option definitions, and missing empty‑line filtering in a generator.",
+  "comments": [
+    {
+      "file": "extensions/terminal-suggest/src/completions/upstream/ssh.ts",
+      "line": 74,
+      "comment": "The generator accesses `tokens[1]` without verifying that the token exists. If the user hasn't typed a second token yet, `tokens[1]` will be undefined and calling `.endsWith('@')` will throw a TypeError, breaking autocomplete. Guard against missing tokens before using them.",
+      "severity": "warning"
+    },
+    {
+      "file": "extensions/terminal-suggest/src/completions/upstream/brew.ts",
+      "line": 74,
+      "comment": "`find` is invoked with `-d 1`, which is not a valid option (should be `-maxdepth 1`). This will cause the generator to fail on most systems. Replace `-d 1` with `-maxdepth 1`.",
+      "severity": "critical"
+    },
+    {
+      "file": "extensions/terminal-suggest/src/completions/upstream/brew.ts",
+      "line": 4,
+      "comment": "`servicesGenerator` postProcess splits on newlines but does not filter out empty strings, so a trailing newline will produce a suggestion with an empty name. Add `.filter(line => line.trim() !== '')` before mapping.",
+      "severity": "warning"
+    },
+    {
+      "file": "extensions/terminal-suggest/src/completions/upstream/brew.ts",
+      "line": 133,
+      "comment": "`--pinned` option is defined twice in the `list` subcommand (lines 133‑136 and 147‑150). Duplicate option definitions can cause ambiguous behavior. Remove one of the duplicates.",
+      "severity": "warning"
+    },
+    {
+      "file": "extensions/terminal-suggest/src/completions/upstream/brew.ts",
+      "line": 204,
+      "comment": "`--pinned` option is also duplicated in the `ls` subcommand (lines 204‑207 and 218‑221). Consolidate to a single definition to avoid conflicts.",
+      "severity": "warning"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "pr": {
+    "title": "Assemble sandbox/approval/network prompts dynamically",
+    "owner": "openai",
+    "repo": "codex",
+    "number": 8961
+  },
+  "stats": {
+    "filesReviewed": 30,
+    "additions": 1089,
+    "deletions": 655
+  },
+  "summary": "The PR introduces dynamic permissions messaging and trims environment context. Most changes are safe, but there are a few edge‑case risks that need attention.",
+  "comments": [
+    {
+      "file": "codex-rs/core/src/rollout/truncation.rs",
+      "line": 209,
+      "comment": "Adding `items[3]` assumes the vector always has at least four elements. If a test or future code provides fewer items, this will panic with an out‑of‑bounds panic. Add a guard or ensure the test data always includes a fourth item.",
+      "severity": "warning"
+    },
+    {
+      "file": "codex-rs/core/src/thread_manager.rs",
+      "line": 405,
+      "comment": "Same out‑of‑bounds risk as above: accessing `items[3]` without checking length can cause a panic. Guard against short vectors or document the required size.",
+      "severity": "warning"
+    },
+    {
+      "file": "codex-rs/core/src/codex.rs",
+      "line": 856,
+      "comment": "`self.record_conversation_items(&turn_context, &initial_context).await;` passes a `&Vec<ResponseItem>` where the function likely expects a slice. This works via coercion, but the intent is clearer if you pass `&initial_context[..]` to avoid accidental misuse if the signature changes.",
+      "severity": "suggestion"
+    },
+    {
+      "file": "codex-rs/core/src/environment_context.rs",
+      "line": 20,
+      "comment": "The `cwd` value is inserted directly into XML without escaping. If a malicious path contains characters like `<` or `&`, it could break XML parsing. Consider escaping or validating the path before serialization.",
+      "severity": "warning"
+    }
+  ]
+}
