@@ -1,36 +1,51 @@
 import fs from "fs";
 import path from "path";
 
-const CACHE_DIR =
+// Pre-seeded cache lives in the repo (survives Vercel cold starts)
+const SEED_CACHE_DIR = path.join(process.cwd(), "src", "data", "cached-reviews");
+
+// Runtime cache for non-seeded PRs
+const RUNTIME_CACHE_DIR =
   process.env.NODE_ENV === "production"
     ? path.join("/tmp", ".review-cache")
     : path.join(process.cwd(), ".cache");
 
-function ensureCacheDir() {
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+function ensureRuntimeCacheDir() {
+  if (!fs.existsSync(RUNTIME_CACHE_DIR)) {
+    fs.mkdirSync(RUNTIME_CACHE_DIR, { recursive: true });
   }
-}
-
-function cacheFilePath(key: string): string {
-  return path.join(CACHE_DIR, `${key}.json`);
 }
 
 export function getCachedReview<T>(key: string): T | null {
+  // 1. Check pre-seeded cache first (always available, even on cold starts)
   try {
-    const filePath = cacheFilePath(key);
-    if (!fs.existsSync(filePath)) return null;
-    const data = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(data) as T;
+    const seedPath = path.join(SEED_CACHE_DIR, `${key}.json`);
+    if (fs.existsSync(seedPath)) {
+      const data = fs.readFileSync(seedPath, "utf-8");
+      return JSON.parse(data) as T;
+    }
   } catch {
-    return null;
+    // fall through
   }
+
+  // 2. Check runtime cache
+  try {
+    const runtimePath = path.join(RUNTIME_CACHE_DIR, `${key}.json`);
+    if (fs.existsSync(runtimePath)) {
+      const data = fs.readFileSync(runtimePath, "utf-8");
+      return JSON.parse(data) as T;
+    }
+  } catch {
+    // fall through
+  }
+
+  return null;
 }
 
 export function setCachedReview<T>(key: string, data: T): void {
   try {
-    ensureCacheDir();
-    const filePath = cacheFilePath(key);
+    ensureRuntimeCacheDir();
+    const filePath = path.join(RUNTIME_CACHE_DIR, `${key}.json`);
     fs.writeFileSync(filePath, JSON.stringify(data), "utf-8");
   } catch {
     // Cache write failure is non-fatal
