@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseDiff, chunkDiffFiles } from "@/lib/diff-parser";
 import { reviewDiffChunk, AIReviewResult } from "@/lib/openrouter";
+import { getCachedReview, setCachedReview, buildCacheKey } from "@/lib/review-cache";
 
 export const maxDuration = 120;
 
-interface PRInfo {
+interface PRMeta {
   owner: string;
   repo: string;
   pullNumber: number;
   title: string;
   body: string;
-  diff: string;
+  headSha: string;
 }
 
-async function fetchPRInfo(prUrl: string): Promise<PRInfo> {
-  // Parse PR URL: https://github.com/owner/repo/pull/123
+async function fetchPRMeta(prUrl: string): Promise<PRMeta> {
   const match = prUrl.match(
     /github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/
   );
@@ -24,7 +24,6 @@ async function fetchPRInfo(prUrl: string): Promise<PRInfo> {
 
   const [, owner, repo, pullNumber] = match;
 
-  // Fetch PR metadata
   const prResponse = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}`,
     {
@@ -44,7 +43,17 @@ async function fetchPRInfo(prUrl: string): Promise<PRInfo> {
 
   const prData = await prResponse.json();
 
-  // Fetch diff
+  return {
+    owner,
+    repo,
+    pullNumber: parseInt(pullNumber),
+    title: prData.title,
+    body: prData.body || "",
+    headSha: prData.head?.sha || "",
+  };
+}
+
+async function fetchPRDiff(owner: string, repo: string, pullNumber: number): Promise<string> {
   const diffResponse = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}`,
     {
@@ -59,16 +68,7 @@ async function fetchPRInfo(prUrl: string): Promise<PRInfo> {
     throw new Error(`Failed to fetch diff: ${diffResponse.status}`);
   }
 
-  const diff = await diffResponse.text();
-
-  return {
-    owner,
-    repo,
-    pullNumber: parseInt(pullNumber),
-    title: prData.title,
-    body: prData.body || "",
-    diff,
-  };
+  return diffResponse.text();
 }
 
 export async function POST(request: NextRequest) {
@@ -82,18 +82,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch PR info and diff
-    const prInfo = await fetchPRInfo(prUrl.trim());
+    // Fetch PR metadata (lightweight — just the JSON, no diff)
+    const meta = await fetchPRMeta(prUrl.trim());
 
-    if (!prInfo.diff) {
+    // Check cache
+    const cacheKey = buildCacheKey(meta.owner, meta.repo, meta.pullNumber, meta.headSha);
+    const cached = getCachedReview<ReturnType<typeof buildResponse>>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
+    // Cache miss — fetch diff and run AI review
+    const diff = await fetchPRDiff(meta.owner, meta.repo, meta.pullNumber);
+
+    if (!diff) {
       return NextResponse.json(
         { error: "No diff found for this PR" },
         { status: 400 }
       );
     }
 
-    // Parse and chunk the diff
-    const files = parseDiff(prInfo.diff);
+    const files = parseDiff(diff);
 
     if (files.length === 0) {
       return NextResponse.json(
@@ -104,43 +113,56 @@ export async function POST(request: NextRequest) {
 
     const chunks = chunkDiffFiles(files);
 
-    // Review each chunk
     const allResults: AIReviewResult[] = [];
     for (const chunk of chunks) {
       const result = await reviewDiffChunk(
         chunk.files,
-        prInfo.title,
-        prInfo.body
+        meta.title,
+        meta.body
       );
       allResults.push(result);
     }
 
-    // Merge results
     const comments = allResults.flatMap((r) => r.comments);
     const summaries = allResults.map((r) => r.summary).filter(Boolean);
 
-    // Build stats
     const totalAdditions = files.reduce((s, f) => s + f.additions, 0);
     const totalDeletions = files.reduce((s, f) => s + f.deletions, 0);
 
-    return NextResponse.json({
-      pr: {
-        title: prInfo.title,
-        owner: prInfo.owner,
-        repo: prInfo.repo,
-        number: prInfo.pullNumber,
-      },
-      stats: {
-        filesReviewed: files.length,
-        additions: totalAdditions,
-        deletions: totalDeletions,
-      },
-      summary: summaries.join("\n\n"),
-      comments,
-    });
+    const response = buildResponse(meta, files.length, totalAdditions, totalDeletions, summaries, comments);
+
+    // Write to cache
+    setCachedReview(cacheKey, response);
+
+    return NextResponse.json(response);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Something went wrong";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+function buildResponse(
+  meta: PRMeta,
+  filesReviewed: number,
+  additions: number,
+  deletions: number,
+  summaries: string[],
+  comments: AIReviewResult["comments"]
+) {
+  return {
+    pr: {
+      title: meta.title,
+      owner: meta.owner,
+      repo: meta.repo,
+      number: meta.pullNumber,
+    },
+    stats: {
+      filesReviewed,
+      additions,
+      deletions,
+    },
+    summary: summaries.join("\n\n"),
+    comments,
+  };
 }
